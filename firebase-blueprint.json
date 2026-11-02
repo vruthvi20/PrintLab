@@ -1,0 +1,161 @@
+{
+  "entities": {
+    "PrintRequest": {
+      "title": "PrintRequest",
+      "description": "Student 3D print request for the STEAM Lab Bambu A1 mini",
+      "type": "object",
+      "properties": {
+        "trackingCode": { "type": "string", "maxLength": 16 },
+        "fullName": { "type": "string", "maxLength": 100 },
+        "grade": { "type": "string", "maxLength": 20 },
+        "section": { "type": "string", "maxLength": 20 },
+        "email": { "type": "string", "maxLength": 100 },
+        "projectTitle": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "fileUrl": { "type": "string", "maxLength": 1000 },
+        "fileName": { "type": "string", "maxLength": 255 },
+        "fileSizeBytes": { "type": "number" },
+        "dimensions": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "z": { "type": "number" }
+          }
+        },
+        "material": { "type": "string", "maxLength": 50 },
+        "color": { "type": "string", "maxLength": 50 },
+        "infill": { "type": "number" },
+        "quantity": { "type": "number" },
+        "preferredWindow": { "type": "string", "maxLength": 100 },
+        "estimatedMinutes": { "type": "number" },
+        "actualMinutes": { "type": "number" },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected", "needs_changes", "scheduled", "printing", "completed", "ready", "collected"]
+        },
+        "adminComment": { "type": "string", "maxLength": 1000 },
+        "rejectionReason": { "type": "string", "maxLength": 1000 },
+        "changeRequestReason": { "type": "string", "maxLength": 1000 },
+        "failureReason": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["trackingCode", "fullName", "email", "projectTitle", "material", "color", "status"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Scheduled print job on the Bambu A1 mini timeline",
+      "type": "object",
+      "properties": {
+        "requestId": { "type": "string", "maxLength": 128 },
+        "trackingCode": { "type": "string", "maxLength": 20 },
+        "projectTitle": { "type": "string", "maxLength": 100 },
+        "studentName": { "type": "string", "maxLength": 100 },
+        "material": { "type": "string", "maxLength": 50 },
+        "color": { "type": "string", "maxLength": 50 },
+        "startTime": { "type": "string", "maxLength": 50 },
+        "endTime": { "type": "string", "maxLength": 50 },
+        "durationMinutes": { "type": "number" },
+        "status": {
+          "type": "string",
+          "enum": ["scheduled", "printing", "completed", "failed", "cancelled"]
+        },
+        "failureReason": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["requestId", "startTime", "endTime", "durationMinutes", "status"]
+    },
+    "PrinterStatus": {
+      "title": "PrinterStatus",
+      "description": "Live state of the Bambu Lab A1 mini",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["available", "printing", "maintenance", "offline"]
+        },
+        "currentJobId": { "type": "string", "maxLength": 128 },
+        "currentJobTitle": { "type": "string", "maxLength": 100 },
+        "maintenanceReason": { "type": "string", "maxLength": 500 },
+        "expectedReturnDate": { "type": "string", "maxLength": 50 },
+        "updatedAt": { "type": "string" },
+        "updatedBy": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["status"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized STEAM Lab administrator account",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "enum": ["admin", "superadmin"] },
+        "addedAt": { "type": "string" },
+        "addedBy": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "AdminInvitation": {
+      "title": "AdminInvitation",
+      "description": "Invitation record for new admin user",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 100 },
+        "token": { "type": "string", "maxLength": 128 },
+        "role": { "type": "string", "enum": ["admin"] },
+        "status": { "type": "string", "enum": ["pending", "accepted", "revoked"] },
+        "invitedBy": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string" },
+        "expiresAt": { "type": "string" }
+      },
+      "required": ["email", "token", "status"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Audit trail of admin actions",
+      "type": "object",
+      "properties": {
+        "action": { "type": "string", "maxLength": 100 },
+        "details": { "type": "string", "maxLength": 1000 },
+        "adminEmail": { "type": "string", "maxLength": 100 },
+        "timestamp": { "type": "string" },
+        "entityId": { "type": "string", "maxLength": 128 },
+        "entityType": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["action", "details", "adminEmail", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/requests/{requestId}": {
+      "schema": { "$ref": "#/entities/PrintRequest" },
+      "description": "Print requests submitted by students or managed by admins"
+    },
+    "/bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/Booking" },
+      "description": "Schedule bookings on the single Bambu Lab A1 mini timeline"
+    },
+    "/printerStatus/{docId}": {
+      "schema": { "$ref": "#/entities/PrinterStatus" },
+      "description": "Real-time state and maintenance details for the printer"
+    },
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "List of authorized STEAM Lab management admins"
+    },
+    "/invitations/{invitationId}": {
+      "schema": { "$ref": "#/entities/AdminInvitation" },
+      "description": "Pending and redeemed admin invitation tokens"
+    },
+    "/settings/{settingDoc}": {
+      "schema": "object",
+      "description": "Lab operating hours, filament inventory, and analytics counters"
+    },
+    "/activityLogs/{logId}": {
+      "schema": { "$ref": "#/entities/ActivityLog" },
+      "description": "Audit log of actions performed by administrators"
+    }
+  }
+}

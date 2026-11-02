@@ -1,0 +1,8 @@
+{
+  "name": "PrintLab - STEAM 3D Printer Booking Platform",
+  "description": "Production-ready 3D printer booking platform for school STEAM Lab featuring real-time Bambu Lab A1 mini scheduling, 3D model volume check, and lab queue management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

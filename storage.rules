@@ -1,0 +1,13 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /models/{allPaths=**} {
+      // Anyone can read uploaded models for 3D preview and print execution
+      allow read: if true;
+      // Allow upload of 3D models up to 50MB
+      allow write: if request.resource.size < 50 * 1024 * 1024
+                   && (request.resource.name.matches('.*\\.(stl|STL|obj|OBJ|3mf|3MF)$')
+                       || request.resource.contentType.matches('application/.*|model/.*|text/.*|application/octet-stream'));
+    }
+  }
+}

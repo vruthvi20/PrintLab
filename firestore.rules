@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'anu292@gmail.com'
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    // Admins Collection
+    match /admins/{uid} {
+      allow read: if isSignedIn();
+      // Allow first admin setup if bootstrap admin or if admin already exists and is adding
+      allow create: if isSignedIn() && (
+        request.auth.uid == uid && (
+          request.auth.token.email == 'anu292@gmail.com' ||
+          !exists(/databases/$(database)/documents/admins/$(uid))
+        ) || isAdmin()
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    // Requests Collection
+    match /requests/{requestId} {
+      // Admins can list and get all; anyone can get a single request with its ID / trackingCode
+      allow get: if true;
+      allow list: if isAdmin();
+
+      // Anyone can submit a print request with valid schema
+      allow create: if request.resource.data.keys().hasAll(['trackingCode', 'fullName', 'email', 'projectTitle', 'material', 'color', 'status'])
+        && request.resource.data.status == 'pending'
+        && request.resource.data.fullName is string && request.resource.data.fullName.size() <= 100
+        && request.resource.data.email is string && request.resource.data.email.size() <= 100
+        && request.resource.data.projectTitle is string && request.resource.data.projectTitle.size() <= 100;
+
+      // Admins can perform full updates; Students can only resubmit file if status is 'needs_changes'
+      allow update: if isAdmin() || (
+        resource.data.status == 'needs_changes' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fileUrl', 'fileName', 'fileSizeBytes', 'dimensions', 'volumeCm3', 'estimatedMinutes', 'status', 'updatedAt']) &&
+        request.resource.data.status == 'pending'
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // Bookings Collection (Printer schedule timeline)
+    match /bookings/{bookingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Printer Status (Bambu A1 mini live state)
+    match /printerStatus/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Settings (Lab hours, filament inventory, analytics)
+    match /settings/{settingDoc} {
+      allow read: if true;
+      // Allow incrementing blockedOversizeCount anonymously, admin can write everything
+      allow update: if isAdmin() || (
+        settingDoc == 'analytics' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['blockedOversizeCount', 'updatedAt'])
+      );
+      allow create, delete: if isAdmin();
+    }
+
+    // Invitations for Admins
+    match /invitations/{invitationId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Activity Log
+    match /activityLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+  }
+}
